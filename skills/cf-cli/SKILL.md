@@ -71,13 +71,19 @@ cf <command> --help                   # arguments and options (e.g. cf deploy --
 - **Review `--force` before allowing it.** On some commands `--force` is also an API parameter (for example, `cf workers delete --force` also deletes a Worker that other Workers reference).
 - **`--local` is limited.** It works for KV keys, D1 databases (`cf d1 raw`, `cf d1 migrations list|apply`), and R2 objects; other commands (including `cf d1 query`) return an error instead of calling the API.
 
-## Wrangler projects
+## Choose the CLI for this project
 
-Do not run `cf dev`, `cf build`, or `cf deploy` in a project that has `wrangler.jsonc`/`wrangler.toml` but no `cloudflare.config.ts` — the commands can generate a new configuration that ignores the Wrangler file, or fail. Convert the project first:
+- `cloudflare.config.ts` exists: use `cf`.
+- `wrangler.jsonc`, `wrangler.json`, or `wrangler.toml` exists, and no `cloudflare.config.ts`: keep Wrangler for `dev`, `build`, and `deploy`. Do not run `cf dev`, `cf build`, or `cf deploy` there — they can generate a new configuration that ignores the Wrangler file, or fail. `cf` resource commands (DNS, zones, storage) are fine alongside it. Run `cf migrate` only when the user asks, and follow [Migrate a Wrangler project](https://developers.cloudflare.com/cf/wrangler/migrate/index.md): preview with `cf migrate --dry-run`, run `cf migrate`, then resolve the `TODO(@cloudflare)` comments in the generated `cloudflare.config.ts`.
+- Neither exists: use `cf`, as [Use cf with coding agents](https://developers.cloudflare.com/cf/agents/index.md) recommends. Do not install Wrangler or create a Wrangler configuration file.
 
-```bash
-cf migrate --dry-run   # preview without writing files
-cf migrate              # write cloudflare.config.ts, then resolve TODO(@cloudflare) comments
-```
+For Wrangler equivalents, use the [Wrangler to cf reference](https://developers.cloudflare.com/cf/wrangler/reference/index.md) or `cf cli search`. Do not translate Wrangler commands from memory. For the full comparison, refer to [`cf` for Wrangler users](https://developers.cloudflare.com/cf/wrangler/index.md).
 
-Resource commands (DNS, zones, storage) run alongside an unchanged Wrangler project. For the full comparison, refer to [`cf` for Wrangler users](https://developers.cloudflare.com/cf/wrangler/index.md).
+## Commands `cf` does not support yet
+
+`cf` does not support every Wrangler command yet. Run these with `npx wrangler` instead of adding Wrangler to the project. Wrangler does not read `cloudflare.config.ts`, so pass the Worker name:
+
+- Live logs: `npx wrangler tail <WORKER_NAME>`.
+- A single secret: `npx wrangler secret put <SECRET_NAME> --name <WORKER_NAME>`. Or upload secrets with a new Worker version by passing `--secrets-file <PATH>` to `cf deploy` or `cf workers versions create`.
+
+For the current list, refer to "Commands not yet supported" in the [Wrangler to cf reference](https://developers.cloudflare.com/cf/wrangler/reference/index.md).
